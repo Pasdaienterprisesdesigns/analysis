@@ -5,13 +5,15 @@ import plotly.express as px
 from datetime import datetime
 
 # === CONFIG ===
-SIM_API_KEY = "sim_444cGnNxG0exoklzAjwNsmIGcv03PBDG"  
+SIM_API_KEY = "sim_444cGnNxG0exoklzAjwNsmIGcv03PBDG"
 HEADERS = {"X-Sim-Api-Key": SIM_API_KEY}
 
 # === API CALLS ===
 def get_token_info(token_address):
+    print(f"Calling token info for: {token_address}")
     url = f"https://api.sim.dune.com/v1/evm/token/{token_address}"
     res = requests.get(url, headers=HEADERS)
+    print(f"Status Code: {res.status_code}, Body: {res.text[:200]}")
     if res.status_code != 200:
         st.error("Token not found or API error.")
         return None
@@ -24,8 +26,10 @@ def get_token_info(token_address):
     }
 
 def get_token_holders(token_address, limit=100):
+    print(f"Calling holders API for: {token_address}")
     url = f"https://api.sim.dune.com/v1/evm/token_holders/{token_address}?limit={limit}"
     res = requests.get(url, headers=HEADERS)
+    print(f"Status Code: {res.status_code}, Body: {res.text[:200]}")
     if res.status_code != 200:
         st.error("Could not fetch token holders.")
         return []
@@ -65,11 +69,11 @@ def calculate_risk_score(holders, token_info):
 
 # === MAIN UI ===
 st.set_page_config(page_title="Token Risk Screener", layout="wide")
-st.title("🧠 Token Risk Engine — New Listings Screener")
+st.title("\U0001F9E0 Token Risk Engine — New Listings Screener")
 
 token_address = st.text_input("Paste ERC-20 Token Address (e.g. 0x...)", "")
 
-if token_address:
+if token_address.strip():
     with st.spinner("Fetching token data..."):
         token_info = get_token_info(token_address)
         holders = get_token_holders(token_address)
@@ -81,12 +85,12 @@ if token_address:
 
         score, flags = calculate_risk_score(holders, token_info)
 
-        st.subheader("🧪 Risk Analysis")
+        st.subheader("\U0001F9EA Risk Analysis")
         st.metric(label="Risk Score (0-100)", value=score)
         for flag in flags:
-            st.warning(f"🚩 {flag}")
+            st.warning(f"⚠️ {flag}")
 
-        st.subheader("📊 Top Holders Distribution")
+        st.subheader("\U0001F4CA Top Holders Distribution")
         df = pd.DataFrame(holders[:10])
         df['percent_of_total'] = df['percent_of_total'].round(2)
         df_display = df[['address', 'amount', 'percent_of_total']]
@@ -95,4 +99,3 @@ if token_address:
         fig = px.pie(df, names='address', values='percent_of_total',
                      title='Top 10 Holders Share')
         st.plotly_chart(fig, use_container_width=True)
-
